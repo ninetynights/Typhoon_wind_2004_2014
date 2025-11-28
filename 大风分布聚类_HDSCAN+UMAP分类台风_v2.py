@@ -45,13 +45,13 @@ from sklearn.metrics import silhouette_score
 plt.rcParams['font.sans-serif'] = ['Heiti TC']
 
 # ======= 1. NetCDF 路径 =======
-NC_PATH = r"/Users/momo/Desktop/业务相关/2025 影响台风大风/数据/Refined_Combine_Stations_ExMaxWind_Fixed.nc"
+NC_PATH = r"/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/Refined_Combine_Stations_ExMaxWind_Fixed_2004_2024.nc"
 
 # ======= 2. Shapefile 路径 =======
 SHP_CITY_PATH = r"/Users/momo/Desktop/业务相关/2025 影响台风大风/地形文件/shapefile/市界/浙江市界.shp"
 
 # ======= 3. 基础输出目录 =======
-BASE_OUTPUT_DIR = Path("/Users/momo/Desktop/业务相关/2025 影响台风大风/输出_大风分级统计")
+BASE_OUTPUT_DIR = Path("/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/输出_大风分级统计")
 
 # ======= 4. 【新】HDBSCAN + UMAP 聚类任务配置 =======
 
@@ -62,17 +62,17 @@ LEVEL_CONFIG = {
     "name": "8-9级",
 }
 
-# --- 【关键】HDBSCAN 参数设定 ---
-MIN_CLUSTER_SIZE = 4 
-MIN_SAMPLES_PARAM = 2 # 最终调优参数
+# --- HDBSCAN 参数设定 ---
+MIN_CLUSTER_SIZE = 8 
+MIN_SAMPLES_PARAM = 2 
 
-# --- 【关键】UMAP 参数设定 ---
+# --- UMAP 参数设定 ---
 N_COMPONENTS_CLUSTER = 5
-N_NEIGHBORS = 8
+N_NEIGHBORS = 12
 MIN_DIST = 0.0
 
-# --- 【新】可视化阈值 ---
-VISUAL_THRESHOLD = 0.1 # 你的新想法！
+# --- 可视化阈值 ---
+VISUAL_THRESHOLD = 0.5 
 
 # --- 绘图参数 (不变) ---
 EXTENT = [118, 123, 27, 31.5]
@@ -185,31 +185,23 @@ def draw_station_count_text_map(
 # ----------------------------- 主逻辑 (UMAP + HDBSCAN) -----------------------------
 def main():
     
-    # 1. 定义配置和输出目录
+    # 1. 定义基础配置 (先不创建目录)
     config = LEVEL_CONFIG
     level_name = config['name']
     thresh_min = config['thresh_min']
     thresh_max = config['thresh_max']
-    
-    # --- 【【【【【核心命名修改】】】】】 ---
-    # 我们把输出目录改一下名，以作区分
-    safe_level_name = sanitize_filename(level_name) # <-- 先获取安全名称
-    output_subdir_name = f"输出_台风聚类_Std_UMAP_HDBSCAN_{safe_level_name}_ms{MIN_SAMPLES_PARAM}_viz{VISUAL_THRESHOLD}"
-    output_dir = BASE_OUTPUT_DIR / output_subdir_name
-    # --- 【【【【【修改结束】】】】】 ---
-    
-    ensure_dir(output_dir)
+    safe_level_name = sanitize_filename(level_name)
     
     print(f"{'='*70}")
-    print(f"--- 任务：StandardScaler + UMAP + HDBSCAN 台风聚类 (最终可视化版) ---")
+    print(f"--- 任务：StandardScaler + UMAP + HDBSCAN 台风聚类 (自动评分版) ---")
     print(f"--- 级别：“{level_name}” ---")
-    print(f"--- HDBSCAN min_cluster_size = {MIN_CLUSTER_SIZE} ---")
-    print(f"--- HDBSCAN min_samples = {MIN_SAMPLES_PARAM} (最终调优) ---")
-    print(f"--- 可视化阈值 = {VISUAL_THRESHOLD} (新) ---")
-    print(f"--- 输出目录: {output_dir.resolve()} ---")
+    print(f"--- [参数] MIN_CLUSTER_SIZE (mcs) = {MIN_CLUSTER_SIZE}")
+    print(f"--- [参数] MIN_SAMPLES      (ms)  = {MIN_SAMPLES_PARAM}")
+    print(f"--- [参数] N_NEIGHBORS      (nn)  = {N_NEIGHBORS}")
+    print(f"--- [参数] VISUAL_THRESHOLD (viz) = {VISUAL_THRESHOLD}")
     print(f"{'='*70}")
 
-    # 2. 读数据 (不变)
+    # 2. 读数据
     print(f"正在读取 NetCDF 文件: {NC_PATH}")
     nc = Dataset(NC_PATH)
 
@@ -241,7 +233,7 @@ def main():
     
     print(f"数据读取完毕。共 {n_sta} 个站点，{len(items)} 个台风过程。")
 
-    # 3. 构建 (N台风, M站点) 特征矩阵 (不变)
+    # 3. 构建特征矩阵
     print(f"\n正在为 {len(items)} 个台风构建“{level_name}”空间分布特征向量...")
     
     feature_vectors = []
@@ -282,12 +274,12 @@ def main():
 
     print(f"\n特征矩阵构建完毕: (N_台风 = {X.shape[0]}, M_站点 = {X.shape[1]})")
 
-    # --- 步骤 5: 使用 StandardScaler ---
+    # --- 步骤 5: StandardScaler ---
     print("正在使用 StandardScaler 对特征矩阵进行标准化 (放大异常值)...")
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    # --- 步骤 6: 使用 UMAP 降维 ---
+    # --- 步骤 6: UMAP 降维 ---
     print(f"正在使用 UMAP 将数据从 {X_scaled.shape[1]} 维降至 {N_COMPONENTS_CLUSTER} 维...")
     
     umap_cluster_model = umap.UMAP(
@@ -300,9 +292,8 @@ def main():
     X_umap_cluster = umap_cluster_model.fit_transform(X_scaled)
     print("UMAP D (用于聚类) 完成。")
 
-    # --- 步骤 7: 使用 HDBSCAN 聚类 ---
+    # --- 步骤 7: HDBSCAN 聚类 ---
     print(f"\n--- 正在 {N_COMPONENTS_CLUSTER} 维 UMAP 空间上执行 HDBSCAN ---")
-    print(f"--- min_cluster_size = {MIN_CLUSTER_SIZE}, min_samples = {MIN_SAMPLES_PARAM} ---")
     
     clusterer = hdbscan.HDBSCAN(
         min_cluster_size=MIN_CLUSTER_SIZE,
@@ -310,40 +301,56 @@ def main():
         metric='euclidean',
         gen_min_span_tree=True 
     )
-    
     clusterer.fit(X_umap_cluster)
-    
     labels = clusterer.labels_ 
     
-    # 8. 分析和保存结果
+    # 8. 分析结果 & 计算轮廓系数
     df_typhoons_meta['Cluster'] = labels
-    
-    print("\n--- HDBSCAN 聚类结果统计 ---")
     cluster_counts = df_typhoons_meta['Cluster'].value_counts().sort_index()
-    print(cluster_counts)
     
     n_clusters = len(cluster_counts[cluster_counts.index != -1])
-    n_noise = cluster_counts.get(-1, 0)
     
-    print(f"\n总结：")
-    print(f"  > 找到 {n_clusters} 个主要簇")
-    print(f"  > 识别到 {n_noise} 个台风为“噪声” (标签 -1)")
+    # --- 【【【重点修改：先算分，再定文件夹名】】】 ---
+    silhouette_val = -1.0 # 默认值
+    score_str = "None"
     
     if n_clusters >= 2:
         core_samples_mask = (labels != -1)
         core_X = X_umap_cluster[core_samples_mask]
         core_labels = labels[core_samples_mask]
-        score = silhouette_score(core_X, core_labels)
-        print(f"  > 核心簇的轮廓系数 (在 UMAP 空间): {score:.4f}")
+        silhouette_val = silhouette_score(core_X, core_labels)
+        score_str = f"{silhouette_val:.4f}"
+        print(f"\n>>> 核心簇的轮廓系数 (Silhouette Score): {score_str}")
     else:
-        print("  > 核心簇不足2个，无法计算轮廓系数。")
+        print("\n>>> 核心簇不足2个，无法计算轮廓系数。")
 
-    # --- 保存聚类分配表 ---
+    # --- 构建包含分数的最终文件夹名 ---
+    # 命名格式: ..._mcsXX_msXX_nnXX_vizXX_sil0.XXXX
+    output_subdir_name = (
+        f"输出_台风聚类_HDBSCAN_"
+        f"{safe_level_name}_"
+        f"mcs{MIN_CLUSTER_SIZE}_"
+        f"ms{MIN_SAMPLES_PARAM}_"
+        f"nn{N_NEIGHBORS}_"
+        f"viz{VISUAL_THRESHOLD}_"
+        f"sil{score_str}"   # <--- 这里把分数加上去了！
+    )
+    
+    output_dir = BASE_OUTPUT_DIR / output_subdir_name
+    ensure_dir(output_dir)
+    print(f"--- 结果目录已创建: {output_dir.resolve()} ---")
+
+    # --- 保存结果 ---
+    print("\n--- HDBSCAN 聚类结果统计 ---")
+    print(cluster_counts)
+    print(f"\n总结：找到 {n_clusters} 个主要簇，噪声 {cluster_counts.get(-1, 0)} 个。")
+
+    # 保存聚类分配表
     assignments_csv_path = output_dir / f"Typhoon_Cluster_Assignments_HDBSCAN_{safe_level_name}.csv"
     df_typhoons_meta.to_csv(assignments_csv_path, index=False, encoding='utf-8-sig')
-    print(f"\n[OK] 台风聚类归属表已保存: {assignments_csv_path.resolve()}")
+    print(f"\n[OK] 台风聚类归属表已保存。")
 
-    # --- 绘制每个【非噪声】簇的平均分布图 (逻辑不变) ---
+    # --- 绘制平均分布图 ---
     print(f"\n--- 正在为 {n_clusters} 个核心簇绘制平均分布图 ---")
     
     for cluster_id in cluster_counts.index:
@@ -356,7 +363,8 @@ def main():
         avg_footprint = np.mean(cluster_vectors, axis=0)
         
         n_typhoons = len(cluster_typhoons)
-        title = f"HDBSCAN 聚类 (ms={MIN_SAMPLES_PARAM}): {level_name} (簇={cluster_id})\n包含 {n_typhoons} 个台风的【平均】空间分布"
+        title = (f"HDBSCAN (mcs={MIN_CLUSTER_SIZE}, nn={N_NEIGHBORS}): {level_name}\n"
+                 f"簇={cluster_id} (N={n_typhoons}), Score={score_str}")
         
         fname = f"Typhoon_Cluster_HDBSCAN_{safe_level_name}_C{cluster_id}_AvgFootprint.png"
         png_path = output_dir / fname
@@ -380,10 +388,14 @@ def main():
     X_umap_viz = umap_viz_model.fit_transform(X_scaled)
     
     plt.figure(figsize=(12, 10))
-    
     unique_labels = np.unique(labels)
-    colors = plt.cm.get_cmap('Spectral', len(unique_labels[unique_labels != -1]))
-    color_map = {label: colors(i) for i, label in enumerate(unique_labels[unique_labels != -1])}
+    # 处理颜色映射
+    valid_labels = unique_labels[unique_labels != -1]
+    if len(valid_labels) > 0:
+        colors = plt.cm.get_cmap('Spectral', len(valid_labels))
+        color_map = {label: colors(i) for i, label in enumerate(valid_labels)}
+    else:
+        color_map = {}
     color_map[-1] = (0.7, 0.7, 0.7, 0.5) 
     
     for i, label in enumerate(labels):
@@ -404,8 +416,8 @@ def main():
                           label=f"簇 {label} (N={cluster_counts.get(label, 0)})") 
                for label in cluster_counts.index]
     
-    plt.legend(handles=handles, title="HDBSCAN 聚类结果")
-    plt.title(f'台风空间分布的 UMAP 可视化 (2D)\n(按 HDBSCAN, ms={MIN_SAMPLES_PARAM} 结果着色)', fontsize=16)
+    plt.legend(handles=handles, title=f"HDBSCAN (Sil={score_str})")
+    plt.title(f'台风空间分布 UMAP (2D) \n(mcs={MIN_CLUSTER_SIZE}, nn={N_NEIGHBORS}, Sil={score_str})', fontsize=16)
     plt.xlabel("UMAP 维度 1", fontsize=12)
     plt.ylabel("UMAP 维度 2", fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.3)
@@ -414,13 +426,12 @@ def main():
     plt.savefig(viz_plot_path, dpi=180)
     plt.close()
     
-    print(f"[OK] 2D UMAP 可视化地图已保存: {viz_plot_path.resolve()}")
+    print(f"[OK] 2D UMAP 可视化地图已保存。")
 
     print(f"\n{'='*50}")
-    print("--- 所有 UMAP + HDBSCAN 任务完成 ---")
-    print(f"请检查输出目录: {output_dir.resolve()}")
+    print("--- 所有任务完成 ---")
+    print(f"请检查输出目录: {output_dir.name}")
     print("="*50)
-
 
 if __name__ == "__main__":
     main()
