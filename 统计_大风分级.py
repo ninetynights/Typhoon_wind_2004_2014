@@ -54,10 +54,10 @@ from netCDF4 import Dataset
 plt.rcParams['font.sans-serif'] = ['Heiti TC']
 
 # ======= 1. NetCDF 路径 =======
-NC_PATH    = r"/Users/momo/Desktop/业务相关/2025 影响台风大风/数据/Refined_Combine_Stations_ExMaxWind_Fixed.nc"
+NC_PATH    = r"/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/Refined_Combine_Stations_ExMaxWind_Fixed_2004_2024.nc"
 
 # ======= 2. 基础输出目录 =======
-BASE_OUTPUT_DIR = Path("/Users/momo/Desktop/业务相关/2025 影响台风大风/输出_大风分级统计")
+BASE_OUTPUT_DIR = Path("/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/输出_大风分级统计")
 
 # ======= 3. 【修改】风速分级阈值 (m/s) 与名称 =======
 
@@ -313,7 +313,7 @@ def process_wind_level_task(
     df_total.to_csv(total_csv_path, index=False, encoding="utf-8")
     
     # 绘制总图
-    title_total = f"2010-2024大风影响台风过程\n小时极大风{title_range_str} 总小时数"
+    title_total = f"2004-2024大风影响台风过程\n小时极大风{title_range_str} 总小时数"
     total_png_path = out_fig / f"AllTyphoons_{task_name}_{level_name}.png"
     draw_station_count_text_map(
         lons, lats, total_counts, stids, title_total, str(total_png_path),
