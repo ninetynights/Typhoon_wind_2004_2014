@@ -63,7 +63,7 @@ LEVEL_CONFIG = {
 }
 
 # --- HDBSCAN 参数设定 ---
-MIN_CLUSTER_SIZE = 8 
+MIN_CLUSTER_SIZE = 9
 MIN_SAMPLES_PARAM = 2 
 
 # --- UMAP 参数设定 ---
