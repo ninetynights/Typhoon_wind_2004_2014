@@ -314,7 +314,7 @@ def draw_cluster_highlight_map(
     draw_legend(ax, level_max_counts) 
     
     total_in_cluster = len(typhoon_ids_in_cluster)
-    ax.set_title(f"2010–2024年台风大风影响时段路径 (聚类: {cluster_id}, 总数: {total_in_cluster}个)", fontsize=16)
+    ax.set_title(f"2004–2024年台风大风影响时段路径 (聚类: {cluster_id}, 总数: {total_in_cluster}个)", fontsize=16)
     
     plt.tight_layout()
     plt.savefig(output_path, dpi=300)
@@ -327,17 +327,17 @@ if __name__ == "__main__":
     
     # *** 路径配置 ***
     # !! 请确保这些路径是正确的 !!
-    BASE_DIR = "/Users/momo/Desktop/业务相关/2025 影响台风大风"
+    BASE_DIR = "/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024"
     BESTTRACK_DIR = os.path.join(BASE_DIR, "热带气旋最佳路径数据集")
-    NC_FILE = os.path.join(BASE_DIR, "数据", "Refined_Combine_Stations_ExMaxWind_Fixed.nc")
-    EXCEL_PATH = os.path.join(BASE_DIR, "数据", "2010_2024_影响台风_大风.xlsx")
+    NC_FILE = os.path.join(BASE_DIR, "数据", "Refined_Combine_Stations_ExMaxWind_Fixed_2004_2024.nc")
+    EXCEL_PATH = os.path.join(BASE_DIR, "数据", "2004_2024_影响台风_大风.xlsx")
 
     # --- [新] 聚类文件路径 ---
     # !! 这是您提供的路径，请确保它准确无误 !!
-    CLUSTER_CSV_PATH = "/Users/momo/Desktop/业务相关/2025 影响台风大风/输出_大风分级统计/输出_台风聚类_Std_UMAP_HDBSCAN_10级及以上_ms2_viz0.1/Typhoon_Cluster_Assignments_HDBSCAN_10级及以上.csv"
+    CLUSTER_CSV_PATH = "/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/输出_大风分级统计/输出_台风聚类_HDBSCAN_8-9级_mcs8_ms1_nn15_viz0.5_sil0.3702/Typhoon_Cluster_Assignments_HDBSCAN_8-9级.csv"
 
     # --- [新] 输出目录 ---
-    OUTPUT_DIR_CLUSTER = os.path.join("/Users/momo/Desktop/业务相关/2025 影响台风大风/输出_大风分级统计/输出_聚类路径图_10级及以上")
+    OUTPUT_DIR_CLUSTER = os.path.join("/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/输出_大风分级统计/输出_聚类路径图_8-9级及以上")
     os.makedirs(OUTPUT_DIR_CLUSTER, exist_ok=True)
     
     # --- [S1] 加载 NC 筛选的台风ID ---
