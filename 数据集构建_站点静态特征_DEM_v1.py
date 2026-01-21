@@ -19,7 +19,7 @@ if not os.path.exists(DEM_FILE):
     # 尝试在数据目录下找
     DEM_FILE = os.path.join(BASE_DIR, "数据", "DEM_0P05_CHINA.nc")
 
-OUTPUT_CSV = os.path.join(BASE_DIR, "输出_机器学习", "Station_Static_Features_DEM.csv")
+OUTPUT_CSV = os.path.join(BASE_DIR, "输出_机器学习", "Station_Static_Features_DEM_15km.csv")
 
 # ================= 核心计算函数 =================
 
@@ -205,7 +205,7 @@ def calculate_terrain_complexity_from_dem(station_lons, station_lats, dem_path, 
         print(f"[错误] DEM 计算失败: {e}")
         return None
 
-def calculate_terrain_complexity_neighbors(lons, lats, heights, radius_km=10.0):
+def calculate_terrain_complexity_neighbors(lons, lats, heights, radius_km=15.0):
     """
     (备选方案) 计算每个站点周围 R 公里范围内所有站点的海拔标准差
     """
@@ -261,7 +261,7 @@ def main():
     
     if terrain_comp is None:
         print("降级使用站点邻近法计算复杂度...")
-        terrain_comp = calculate_terrain_complexity_neighbors(lons, lats, heights, radius_km=10.0)
+        terrain_comp = calculate_terrain_complexity_neighbors(lons, lats, heights, radius_km=15.0)
     else:
         print("DEM 地形复杂度计算完成。")
     
