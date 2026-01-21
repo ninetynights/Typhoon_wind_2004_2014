@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib.colors as mcolors
 import matplotlib.patheffects as pe
+import matplotlib.image as mpimg  # [新增] 用于读取图片进行拼接
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
@@ -54,44 +55,15 @@ PATHS = {
 }
 
 # --- 聚类参数配置 (Step 1) ---
-'''
---- HDBSCAN 参数设定 ---
-1. MIN_CLUSTER_SIZE (最小簇大小) - 最重要的参数！
-   含义：一个“类”最少得有多少个台风？
-   调整：值越大 -> 分类越少、越宏观（小众路径会被合并或丢弃）。
-        值越小 -> 分类越多、越细碎（容易出现只有3-4个台风的小众类）。
-   建议：想看大类设 10-15；想看细分设 5-8。
-
-2. MIN_SAMPLES_PARAM (最小样本数/核心度)
-   含义：算法对“噪声”的容忍度。
-   调整：值越小 (1-2) -> 算法很宽容，尽量把所有台风都归类，噪声(-1)很少。
-        值越大 (3-5) -> 算法很严格，稍微长得歪一点的台风就不要了，归为噪声(-1)。
-   建议：通常设为 1 或 2，保证大多数台风都有归属。
-
---- UMAP 参数设定 ---
-3. N_NEIGHBORS (邻居数)
-   含义：UMAP 降维时的“视野范围”。
-   调整：值越小 (5-10) -> 关注“局部细节”。易导致大类被拆碎。
-        值越大 (15-30) -> 关注“全局结构”。能把地理位置相近的台风更好地拉在一起。
-   建议：为了获得好的可解释性，建议设大一点 (12-20)。
-
-4. N_COMPONENTS_CLUSTER (聚类用维度)
-   含义：将几千个站点压缩到几个维度给 HDBSCAN 看。通常 5 维足够保留信息。
-
-5. MIN_DIST (最小距离)
-   含义：控制降维后点的紧凑程度。0.0 表示允许点重合。通常保持 0.0 或 0.1。
-'''
-
 CLUSTER_CONFIG = {
     "level": {
-        "thresh_min": 17.2,
-        "thresh_max": 28.4,
-        "name": "8-10级",
+        "thresh_min": 17.2,       # 下限
+        "thresh_max": 28.4,      # 上限
+        "name": "8-10级",      # 名字
     },
-    
     "min_cluster_size": 10,   
     "min_samples": 2,        
-    "n_neighbors": 10,       
+    "n_neighbors": 8,       
     "n_components": 5,       
     "min_dist": 0.0,
     "visual_threshold": 0.5
@@ -142,11 +114,9 @@ def sanitize_filename(name: str) -> str:
 def parse_mapping(attr_str: str):
     if not attr_str: return {}
     pairs = (p for p in attr_str.strip().split(";") if ":" in p)
-    # [关键修复] 确保所有 ID 都是 4 位字符串 (如 '407' -> '0407')
     return {k.strip().zfill(4): v.strip() for k, v in (q.split(":", 1) for q in pairs)}
 
 def slerp_lonlat(lon1, lat1, lon2, lat2, f: float):
-    # 球面线性插值
     a = np.array([
         math.cos(math.radians(lat1))*math.cos(math.radians(lon1)),
         math.cos(math.radians(lat1))*math.sin(math.radians(lon1)),
@@ -192,6 +162,43 @@ def hourly_interp(points: List[TrackPoint]) -> List[TrackPoint]:
                 out.append(TrackPoint(cur, lon, lat, "Interp"))
         cur += pd.Timedelta(hours=1)
     return out
+
+# --- [新增] 综合视图拼图函数 ---
+def create_combined_view(avg_fp_path, track_path, output_path):
+    """
+    读取 Step 1 的平均分布图和 Step 2 的路径图，拼合成一张上下结构的图。
+    """
+    if not os.path.exists(avg_fp_path):
+        print(f"   [警告] 无法生成综合图，找不到Step1分布图: {avg_fp_path.name}")
+        return
+    if not os.path.exists(track_path):
+        print(f"   [警告] 无法生成综合图，找不到Step2路径图: {track_path.name}")
+        return
+
+    try:
+        # 读取图片
+        img1 = mpimg.imread(avg_fp_path)
+        img2 = mpimg.imread(track_path)
+
+        # 创建画板 (2行1列)
+        # 这里的 figsize 可以根据原图比例适当调整，(12, 16) 是个比较通用的纵向长图比例
+        fig, axes = plt.subplots(2, 1, figsize=(12, 18))
+        
+        # 绘制第一行：大风分布 (Step 1)
+        axes[0].imshow(img1)
+        axes[0].axis('off') # 关闭坐标轴显示
+        # axes[0].set_title("【上图】大风平均分布 (Step 1 Output)", fontsize=14, pad=10)
+
+        # 绘制第二行：台风路径 (Step 2)
+        axes[1].imshow(img2)
+        axes[1].axis('off')
+        # axes[1].set_title("【下图】台风移动路径 (Step 2 Output)", fontsize=14, pad=10)
+
+        plt.tight_layout()
+        plt.savefig(output_path, dpi=200) # 保存为新文件
+        plt.close(fig)
+    except Exception as e:
+        print(f"   [错误] 拼图失败: {e}")
 
 # ==========================================
 #           第二部分：Step 1 聚类逻辑
@@ -246,7 +253,6 @@ def run_step1_clustering() -> Tuple[Optional[Path], Optional[Path]]:
         return None, None
     nc = Dataset(PATHS['nc_file'])
     id_to_index = parse_mapping(getattr(nc, 'id_to_index', None))
-    # 确保从 NC 读出的 ID 也是 4 位
     index_to_cn = parse_mapping(getattr(nc, 'index_to_cn', None))
     index_to_en = parse_mapping(getattr(nc, 'index_to_en', None))
     stids = np.array(nc.variables['STID'][:]).astype(str)
@@ -260,17 +266,15 @@ def run_step1_clustering() -> Tuple[Optional[Path], Optional[Path]]:
     n_time, n_sta = wind_speeds.shape
     
     if id_to_index:
-        # 强制 zfill(4)
         items = sorted([(tid.strip().zfill(4), int(str(idx).strip())) for tid, idx in id_to_index.items() if str(idx).strip().isdigit()], key=lambda kv: kv[0])
     else:
         uniq = sorted({int(x) for x in np.unique(ty_ids) if int(x) >= 0})
         items = [(str(idx).zfill(4), idx) for idx in uniq]
 
     # 2. 构建特征
-    print(f"构建 {lvl['name']} 特征矩阵...")
+    print(f"构建 {lvl['name']} ({lvl['thresh_min']}~{lvl['thresh_max']}m/s) 特征矩阵...")
     feature_vectors, typhoon_metadata = [], []
     for tid_str, ty_idx in items:
-        # tid_str 已经是 4 位，如 "0407"
         vec = np.zeros(n_sta, dtype=float)
         for i in range(n_sta):
             mask_ty = (ty_ids[:, i] == ty_idx)
@@ -281,15 +285,15 @@ def run_step1_clustering() -> Tuple[Optional[Path], Optional[Path]]:
         if np.sum(vec) > 0:
             feature_vectors.append(vec)
             typhoon_metadata.append({"TID": tid_str, "Index": ty_idx})
-            
+    
     print(f"\n>>> [统计信息] 共有 {len(typhoon_metadata)} 个台风在影响过程中出现了 {lvl['name']} 大风。")
-    # ========================================================
 
     X = np.array(feature_vectors)
     df_meta = pd.DataFrame(typhoon_metadata)
     
     if X.shape[0] < cfg['min_cluster_size'] * 2:
-        print("[错误] 有效台风样本不足，无法聚类。")
+        print(f"[错误] 有效台风样本数({X.shape[0]})不足(小于2*min_cluster_size)，无法进行有效聚类。")
+        print("建议：请尝试降低 CLUSTER_CONFIG 中的 'min_cluster_size' 参数。")
         return None, None
 
     # 3. 聚类
@@ -325,7 +329,6 @@ def run_step1_clustering() -> Tuple[Optional[Path], Optional[Path]]:
     print(f"结果目录: {out_dir}")
     
     csv_path = out_dir / f"Typhoon_Cluster_Assignments_HDBSCAN_{safe_lvl_name}.csv"
-    # 保存 CSV
     df_meta.to_csv(csv_path, index=False, encoding='utf-8-sig')
     
     print(f"正在绘制 {n_clusters} 个聚类的平均分布图...")
@@ -333,7 +336,7 @@ def run_step1_clustering() -> Tuple[Optional[Path], Optional[Path]]:
         if cid == -1: continue
         c_vecs = X[df_meta[df_meta['Cluster'] == cid].index]
         avg_fp = np.mean(c_vecs, axis=0)
-        title = f"Cluster {cid} (N={len(c_vecs)}), Sil={score_str}"
+        title = f"聚类类别 {cid} (总数{len(c_vecs)}), 轮廓系数{score_str}"
         fname = out_dir / f"Typhoon_Cluster_HDBSCAN_{safe_lvl_name}_C{cid}_AvgFootprint.png"
         draw_station_count_text_map(lons, lats, avg_fp, stids, title, str(fname), lvl['thresh_min'], [118, 123, 27, 31.5])
 
@@ -399,7 +402,6 @@ def draw_legend(ax, level_max_counts: Dict[str, int]):
 def get_typhoon_ids_from_nc(nc_path: str) -> Set[str]:
     nc = Dataset(nc_path)
     id_attr = nc.getncattr('id_to_index')
-    # [关键修复] 返回集合时，统一转成 4 位 (如 '407' -> '0407')
     id_map = {k.strip().zfill(4): int(v.strip()) for k, v in [p.split(":") for p in id_attr.split(";") if ":" in p]}
     nc.close()
     return set(id_map.keys())
@@ -408,7 +410,6 @@ def read_excel_windows(path: str) -> pd.DataFrame:
     try:
         df = pd.read_excel(path)
         df = df[["中央台编号", "大风开始时间", "大风结束时间"]].copy()
-        # [关键修复] 统一 4 位 ID
         df["中央台编号"] = df["中央台编号"].astype(str).str.strip().str.zfill(4)
         df["大风开始时间"] = pd.to_datetime(df["大风开始时间"], errors='coerce')
         df["大风结束时间"] = pd.to_datetime(df["大风结束时间"], errors='coerce')
@@ -434,7 +435,6 @@ def read_all_tracks_as_points(folder_path: str, valid_ids: Set[str]) -> Dict[str
                         track_data.setdefault(cid, []).extend(cpath)
                     parts = re.split(r'\s+', line)
                     if len(parts) >= 5:
-                        # [关键修复] 读取 BST 文件时，强制把 "407" 转成 "0407"
                         raw_id = parts[4].strip()
                         cid = raw_id.zfill(4) 
                     else:
@@ -460,7 +460,6 @@ def draw_cluster_highlight_map(cluster_id, tids, track_data, impact_windows, lev
     ax = plt.axes(projection=ccrs.PlateCarree())
     setup_map_axis(ax)
 
-    # 绘制高亮插值路径
     for tid in tids:
         if tid not in track_data or not track_data[tid] or tid not in impact_windows: continue
         windows = impact_windows[tid]
@@ -477,7 +476,6 @@ def draw_cluster_highlight_map(cluster_id, tids, track_data, impact_windows, lev
             if len(xs_h) >= 2:
                 ax.plot(xs_h, ys_h, '-', lw=LW_HL, color=COLOR_HL, alpha=0.9, zorder=2, transform=ccrs.PlateCarree())
 
-    # 绘制强度点
     for tid in tids:
         if tid not in track_data or not track_data[tid] or tid not in impact_windows: continue
         path = track_data[tid]
@@ -515,21 +513,17 @@ def run_step2_visualization(base_output_dir: Path, cluster_csv_path: Path):
     viz_output_dir = base_output_dir
     ensure_dir(viz_output_dir)
     
-    # 1. 加载基础数据 (路径数据用于画线)
     valid_ids = get_typhoon_ids_from_nc(PATHS['nc_file'])
     track_data = read_all_tracks_as_points(PATHS['best_track_dir'], valid_ids)
     
-    # 2. 加载大风时间窗口
     excel_df = read_excel_windows(PATHS['excel_file'])
     impact_windows = defaultdict(list)
     for _, r in excel_df.iterrows():
         impact_windows[str(r["中央台编号"])].append((r["大风开始时间"], r["大风结束时间"]))
     excel_tids_set = set(impact_windows.keys())
     
-    # 3. 加载标准强度表
     try:
         df_stats = pd.read_csv(STATS_FILE_PATH)
-        # [关键修复] 统一 4 位 ID
         df_stats['中央台编号'] = df_stats['中央台编号'].astype(str).str.strip().str.zfill(4)
         id_to_strength = dict(zip(df_stats['中央台编号'], df_stats['影响时段最强强度']))
         print(f"成功加载标准强度表，共 {len(id_to_strength)} 条记录。")
@@ -537,10 +531,8 @@ def run_step2_visualization(base_output_dir: Path, cluster_csv_path: Path):
         print(f"[严重错误] 读取统计文件失败: {e}")
         return
 
-    # 4. 加载聚类信息
     try:
         df_c = pd.read_csv(cluster_csv_path, dtype={'TID': str})
-        # [关键修复] 统一 4 位 ID
         cluster_map = {
             r['TID'].strip().zfill(4): r['Cluster'] 
             for _, r in df_c.iterrows() 
@@ -551,13 +543,10 @@ def run_step2_visualization(base_output_dir: Path, cluster_csv_path: Path):
         print(f"聚类CSV读取错误: {e}")
         return
 
-    # 5. 循环绘图
     print(f"开始绘制 {len(clusters)} 个聚类的路径图...")
     for cid in clusters:
-        # [关键修复] 这里的 t, cluster_map, excel_tids_set 全部是 4 位 ID，现在可以完美匹配了
         tids = [t for t, c in cluster_map.items() if c == cid and t in excel_tids_set]
         
-        # --- 诊断信息打印 ---
         all_in_cluster = [t for t, c in cluster_map.items() if c == cid]
         missing_excel = set(all_in_cluster) - set(tids)
         missing_track = [t for t in tids if t not in track_data]
@@ -582,9 +571,20 @@ def run_step2_visualization(base_output_dir: Path, cluster_csv_path: Path):
             else:
                 level_max_counts_cluster["弱于热带低压或未知"] += 1
         
+        # 1. 保存原有的台风路径图
         out_png = viz_output_dir / f"台风路径_聚类_{cid}.png"
         draw_cluster_highlight_map(cid, tids, track_data, impact_windows, level_max_counts_cluster, str(out_png))
         print(f"   - [OK] 地图已保存。")
+
+        # 2. [新增] 自动拼图：查找 Step 1 生成的对应图片，与这张图拼合
+        safe_lvl = sanitize_filename(CLUSTER_CONFIG['level']['name'])
+        step1_img_name = f"Typhoon_Cluster_HDBSCAN_{safe_lvl}_C{cid}_AvgFootprint.png"
+        step1_img_path = base_output_dir / step1_img_name # 注意：base_output_dir 这里指向的是 Step 1 的输出子文件夹
+        
+        combined_out = viz_output_dir / f"聚类_{cid}.png"
+        create_combined_view(step1_img_path, out_png, combined_out)
+        if combined_out.exists():
+            print(f"   - [OK] 综合视图已生成: {combined_out.name}")
         
     print(f"Step 2 完成。所有路径图保存在: {viz_output_dir}")
 
