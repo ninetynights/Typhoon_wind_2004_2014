@@ -28,7 +28,7 @@ NC_FILE = os.path.join(BASE_DIR, "数据", "Refined_Combine_Stations_ExMaxWind_F
 OUTPUT_CSV = os.path.join(BASE_DIR, "输出_机器学习", "Final_Training_Dataset_XGBoost.csv")
 
 # 3. 过滤阈值
-MIN_WIND_THRESHOLD = 17.3
+MIN_WIND_THRESHOLD = 17.2
 
 # ================= 辅助函数 =================
 
