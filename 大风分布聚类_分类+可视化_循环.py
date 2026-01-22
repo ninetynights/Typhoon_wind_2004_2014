@@ -51,7 +51,7 @@ PATHS = {
     "stats_file": r"/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/输出_影响台风特征/统计_1_所有事件详情.csv",
 
     # [输出] 结果根目录
-    "output_base_dir": os.path.join(BASE_DIR, "输出_大风分级统计/11级及以上循环聚类结果")
+    "output_base_dir": os.path.join(BASE_DIR, "输出_大风分级统计/11级及以上循环聚类结果_20260122")
 }
 
 # --- 聚类参数配置 (初始值，会被循环覆盖) ---
@@ -274,7 +274,7 @@ def run_step1_clustering() -> Tuple[Optional[Path], Optional[Path], Optional[Dic
     # 聚类
     try:
         X_scaled = StandardScaler().fit_transform(X)
-        X_umap_cluster = umap.UMAP(n_neighbors=cfg['n_neighbors'], n_components=cfg['n_components'], min_dist=cfg['min_dist'], metric='euclidean', random_state=42).fit_transform(X_scaled)
+        X_umap_cluster = umap.UMAP(n_neighbors=cfg['n_neighbors'], n_components=cfg['n_components'], min_dist=cfg['min_dist'], metric='euclidean', random_state=42, n_jobs=1).fit_transform(X_scaled)
         clusterer = hdbscan.HDBSCAN(min_cluster_size=cfg['min_cluster_size'], min_samples=cfg['min_samples'], metric='euclidean', gen_min_span_tree=True)
         clusterer.fit(X_umap_cluster)
         labels = clusterer.labels_
@@ -540,7 +540,7 @@ def run_step2_visualization(base_output_dir: Path, cluster_csv_path: Path):
 if __name__ == "__main__":
     # 定义参数范围
     mcs_range = range(3, 16, 1)
-    nn_range = range(2, 20, 1)
+    nn_range = range(2, 7, 1)
 
     total_combinations = len(mcs_range) * len(nn_range)
     current_count = 0

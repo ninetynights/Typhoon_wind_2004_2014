@@ -282,7 +282,7 @@ def run_step1_clustering() -> Tuple[Optional[Path], Optional[Path]]:
     # 3. 聚类
     print("执行聚类 (StandardScaler -> UMAP -> HDBSCAN) ...")
     X_scaled = StandardScaler().fit_transform(X)
-    X_umap_cluster = umap.UMAP(n_neighbors=cfg['n_neighbors'], n_components=cfg['n_components'], min_dist=cfg['min_dist'], metric='euclidean', random_state=42).fit_transform(X_scaled)
+    X_umap_cluster = umap.UMAP(n_neighbors=cfg['n_neighbors'], n_components=cfg['n_components'], min_dist=cfg['min_dist'], metric='euclidean', random_state=42, n_jobs=1).fit_transform(X_scaled)
     clusterer = hdbscan.HDBSCAN(min_cluster_size=cfg['min_cluster_size'], min_samples=cfg['min_samples'], metric='euclidean', gen_min_span_tree=True)
     clusterer.fit(X_umap_cluster)
     labels = clusterer.labels_
