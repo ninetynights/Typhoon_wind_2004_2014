@@ -1,7 +1,7 @@
 from netCDF4 import Dataset
 
 # 你的文件路径
-nc_path = '/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/All_Typhoons_ExMaxWind_2004_2024.nc'
+nc_path = '/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/Refined_Combine_Stations_ExMaxWind_Fixed_2004_2024.nc'
 
 nc = Dataset(nc_path)
 
