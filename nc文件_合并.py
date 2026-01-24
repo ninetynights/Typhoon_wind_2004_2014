@@ -117,10 +117,10 @@ if __name__ == "__main__":
     # *** 请根据你的实际路径修改这里 ***
     
     # 输入文件
-    path_national = "/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/All_Typhoons_ExMaxWind_2004_2024.nc"
-    path_township = '/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/Representative_Stations_Typhoons_ExMaxWind_Fixed_2004_2024.nc'
+    path_national = '/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据_v2/All_Typhoons_ExMaxWind+SLP+StP_2004_2024.nc'
+    path_township = '/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据_v2/Representative_Stations_Typhoons_ExMaxWind+SLP+StP_Fixed_2004_2024.nc'
 
     # 输出文件
-    path_output = "/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/Combine_Stations_ExMaxWind_Fixed_2004_2024.nc"
+    path_output = "/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据_v2/Combine_Stations_ExMaxWind+SLP+StP_Fixed_2004_2024.nc"
     
     combine_authoritative_nc_files(path_national, path_township, path_output)

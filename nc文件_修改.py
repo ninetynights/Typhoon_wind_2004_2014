@@ -87,18 +87,18 @@ def filter_nc_by_quality(original_nc_path, csv_quality_report, output_nc_path, k
 if __name__ == "__main__":
     
     # --- 1. 文件路径设置 (与你的 '查看_站点质量.py' 保持一致) ---
-    base_dir = "/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/"
+    base_dir = "/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据_v2/"
     
     # 输入文件
     # (原始的、包含所有站点的 NC 文件)
-    nc_file = os.path.join(base_dir, "Combine_Stations_ExMaxWind_Fixed_2004_2024.nc")
+    nc_file = os.path.join(base_dir, "Combine_Stations_ExMaxWind+SLP+StP_Fixed_2004_2024.nc")
     
     # (用于决策的质量报告)
-    csv_quality_report = os.path.join("/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/4_合并后_区分缺测类型_按站点.csv")
+    csv_quality_report = os.path.join("/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据_v2/4_合并后_区分缺测类型_按站点.csv")
     
     # 输出文件
     # (你想要的、精简后的新 NC 文件名)
-    output_nc_file = os.path.join(base_dir, "Refined_Combine_Stations_ExMaxWind_Fixed_2004_2024.nc")
+    output_nc_file = os.path.join(base_dir, "Refined_Combine_Stations_ExMaxWind+SLP+StP_Fixed_2004_2024.nc")
     
     # --- 2. 运行筛选函数 ---
     # 阈值: 你希望保留缺测率 <= 10.0% 的站点

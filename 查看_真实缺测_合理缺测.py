@@ -19,15 +19,15 @@ import os
 import sys
 
 # --- 1. 定义文件路径 ---
-file_path = r'/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/Combine_Stations_ExMaxWind_Fixed_2004_2024.nc'
+file_path = r'/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据_v2/All_Typhoons_ExMaxWind+SLP+StP_2004_2024.nc'
 
 # --- 2. 自动生成输出文件路径 ---
 base_dir = os.path.dirname(file_path)
 base_name = os.path.splitext(os.path.basename(file_path))[0]
 
 output_txt_path = os.path.join(base_dir, f"{base_name}_详细质量分析报告.txt")
-output_csv_station = os.path.join(base_dir, "4_合并后_区分缺测类型_按站点.csv")
-output_csv_time = os.path.join(base_dir, "5_合并后_区分缺测类型_按时间.csv")
+output_csv_station = os.path.join(base_dir, "4_国家站_区分缺测类型_按站点.csv")
+output_csv_time = os.path.join(base_dir, "5_国家站_区分缺测类型_按时间.csv")
 
 # --- 3. 辅助函数：重定向打印 ---
 print(f"正在分析文件: {file_path}")

@@ -21,12 +21,12 @@ import sys
 # ================= 1. 路径配置 (MacOS) =================
 
 # 输入文件路径
-BASE_DIR = "/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/"
-NC_FILE_PATH = os.path.join(BASE_DIR, "Combine_Stations_ExMaxWind_Fixed_2004_2024.nc")
-CSV_FILE_PATH = os.path.join(BASE_DIR, "4_合并后_区分缺测类型_按站点.csv")
+BASE_DIR = "/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据_v2/"
+NC_FILE_PATH = os.path.join(BASE_DIR, "All_Typhoons_ExMaxWind+SLP+StP_2004_2024.nc")
+CSV_FILE_PATH = os.path.join(BASE_DIR, "4_国家站_区分缺测类型_按站点.csv")
 
 # 输出图片路径
-OUTPUT_FIG_PATH = os.path.join(BASE_DIR, "2004_2024_合并后_业务缺测率分布图.png")
+OUTPUT_FIG_PATH = os.path.join(BASE_DIR, "2004_2024_国家站_业务缺测率分布图.png")
 
 # SHP 文件路径 (参考您之前的代码设置，若Mac上没有请忽略，代码会自动处理)
 # 建议：如果您有这些SHP文件，请修改下面的路径为实际路径
