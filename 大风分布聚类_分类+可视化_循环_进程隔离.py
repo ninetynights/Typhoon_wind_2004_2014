@@ -40,14 +40,14 @@ PATHS = {
     "shp_file": os.path.join(BASE_DIR, "地形文件/shapefile/市界/浙江市界.shp"), 
     "best_track_dir": os.path.join(BASE_DIR, "热带气旋最佳路径数据集"),
     "excel_file": os.path.join(BASE_DIR, "数据", "2004_2024_影响台风_大风.xlsx"),
-    "output_base_dir": os.path.join(BASE_DIR, "输出_大风分级统计/11级及以上循环聚类结果_循环隔离new")
+    "output_base_dir": os.path.join(BASE_DIR, "输出_大风分级统计/8-10级循环聚类结果_循环隔离")
 }
 
 # --- 聚类基本等级配置 ---
 CLUSTER_LEVEL_CONFIG = {
-    "thresh_min": 28.5,
-    "thresh_max": 1000,
-    "name": "11级及以上",
+    "thresh_min": 17.2,
+    "thresh_max": 28.4,
+    "name": "8-10级",
 }
 
 # --- 绘图通用设置 ---
