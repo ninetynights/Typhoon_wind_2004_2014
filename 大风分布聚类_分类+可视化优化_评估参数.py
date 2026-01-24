@@ -37,7 +37,7 @@ BASE_DIR = r"/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024"
 
 PATHS = {
     # [输入] NC 数据文件
-    "nc_file": os.path.join(BASE_DIR, "数据", "Refined_Combine_Stations_ExMaxWind_Fixed_2004_2024.nc"),
+    "nc_file": os.path.join(BASE_DIR, "数据_v2", "Refined_Combine_Stations_ExMaxWind+SLP+StP_Fixed_2004_2024.nc"),
     
     # [输入] 市界 Shapefile
     "shp_file": os.path.join(BASE_DIR, "地形文件/shapefile/市界/浙江市界.shp"), 
@@ -46,7 +46,7 @@ PATHS = {
     "best_track_dir": os.path.join(BASE_DIR, "热带气旋最佳路径数据集"),
     
     # [输入] 大风影响时间 Excel
-    "excel_file": os.path.join(BASE_DIR, "数据", "2004_2024_影响台风_大风.xlsx"),
+    "excel_file": os.path.join(BASE_DIR, "数据_v2", "2004_2024_影响台风_大风.xlsx"),
     
     # [输入] 权威统计详情表 (用于查强度)
     "stats_file": r"/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/输出_影响台风特征/统计_1_所有事件详情.csv",
