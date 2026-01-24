@@ -54,7 +54,7 @@ from netCDF4 import Dataset
 plt.rcParams['font.sans-serif'] = ['Heiti TC']
 
 # ======= 1. NetCDF 路径 =======
-NC_PATH    = r"/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据/Refined_Combine_Stations_ExMaxWind_Fixed_2004_2024.nc"
+NC_PATH    = r"/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/数据_v2/Refined_Combine_Stations_ExMaxWind+SLP+StP_Fixed_2004_2024.nc"
 
 # ======= 2. 基础输出目录 =======
 BASE_OUTPUT_DIR = Path("/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/输出_大风分级统计")
@@ -89,7 +89,7 @@ WIND_LEVELS_EXACT = [
 
 
 # ======= 4. Shapefile 路径 =======
-SHP_CITY_PATH = r"/Users/momo/Desktop/业务相关/2025 影响台风大风/地形文件/shapefile/市界/浙江市界.shp"
+SHP_CITY_PATH = r"/Users/momo/Desktop/业务相关/2025 影响台风大风_2004_2024/地形文件/shapefile/市界/浙江市界.shp"
 
 # ======= 5. 其他绘图参数 =======
 EXTENT     = [118, 123, 27, 31.5]   # 设为 None 则自适应
