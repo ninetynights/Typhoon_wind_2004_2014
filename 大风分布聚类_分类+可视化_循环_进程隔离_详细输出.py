@@ -50,14 +50,14 @@ PATHS = {
     "stats_file": os.path.join(BASE_DIR, "输出_影响台风特征/统计_1_所有事件详情.csv"),
     
     # [输出] 结果根目录
-    "output_base_dir": os.path.join(BASE_DIR, "输出_大风分布聚类/8-10级循环聚类结果")
+    "output_base_dir": os.path.join(BASE_DIR, "输出_大风分布聚类/12级及以上循环聚类结果")
 }
 
 # --- 聚类基本等级配置 ---
 CLUSTER_LEVEL_CONFIG = {
-    "thresh_min": 17.2,
-    "thresh_max": 28.4,
-    "name": "8-10级",
+    "thresh_min": 32.7,
+    "thresh_max": 1000,
+    "name": "12级及以上",
     "visual_threshold": 0.5, # 可视化阈值
     "min_samples": 1,        # HDBSCAN min_samples 固定为1
 }
@@ -534,8 +534,8 @@ def process_wrapper(mcs, nn):
 
 if __name__ == "__main__":
     # --- 参数范围配置 ---
-    mcs_range = range(3, 5, 1)  # min_cluster_size
-    nn_range = range(2, 3, 1)   # n_neighbors
+    mcs_range = range(3, 16, 1)  # min_cluster_size
+    nn_range = range(2, 10, 1)   # n_neighbors
     
     summary_results = []
     total_tasks = len(mcs_range) * len(nn_range)
