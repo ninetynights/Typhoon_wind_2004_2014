@@ -1,3 +1,60 @@
+"""
+===============================================================================
+脚本名称: 数据集构建_站点静态特征_DEM_v3.py
+功能描述: 
+    基于气象站点列表和高分辨率 DEM（数字高程模型）数据，计算并构建站点的
+    静态地理环境特征集。该数据集旨在为机器学习模型（如台风大风预报）提供
+    关键的环境背景信息。
+
+核心算法:
+    1. 离岸距离 (Dist_to_Coast): 
+       利用 Cartopy 获取高精度海岸线，构建 KDTree 进行最近邻搜索，并计算 Haversine 球面距离。
+    2. 地形复杂度 (Terrain Complexity / Roughness): 
+       计算站点周围不同半径（5km, 10km, 15km）范围内海拔高度的标准差。
+       反映了地形的崎岖程度，与风速的摩擦衰减密切相关。
+    3. 坡度 (Slope): 
+       基于 DEM 网格计算经向和纬向梯度，合成总坡度（角度）。
+       反映了站点所在网格的宏观倾斜程度。
+    4. 地形位置指数 (TPI, Topographic Position Index): 
+       计算公式：TPI = 站点海拔 - 邻域平均海拔。
+       物理意义：正值表示山脊/凸起，负值表示山谷/洼地，接近0表示平缓坡面或平原。
+       使用 3x3 网格窗口（在 0.05° 分辨率下约对应 15km 尺度）。
+
+输入 (Inputs):
+    1. 站点元数据文件 (NetCDF):
+       - 路径变量: NC_FILE
+       - 必需变量: STID (站号), lat (纬度), lon (经度)
+       - 可选变量: height (海拔)
+    2. 数字高程模型 (NetCDF):
+       - 路径变量: DEM_FILE (默认为 DEM_0P05_CHINA.nc)
+       - 分辨率: 建议 0.05° 或更高
+    3. 海岸线数据 (Shapefile):
+       - 来源: Cartopy Natural Earth (首次运行需联网自动下载)
+
+输出 (Outputs):
+    1. 静态特征表 (CSV):
+       - 路径变量: OUTPUT_CSV
+       - 列结构:
+         * STID, Lat, Lon, Height: 基础信息
+         * Dist_to_Coast: 离岸距离 (km)
+         * Terrain_Complexity_5km/10km/15km: 多尺度地形粗糙度
+         * Slope_Deg: 坡度 (度)
+         * TPI: 地形位置指数 (m)
+
+注意事项 (Notes):
+    1. 坐标系: 所有输入数据默认假设为 WGS84 坐标系。
+    2. 缺失值处理: 若站点超出 DEM 覆盖范围，相关特征将填充为 0 或 NaN。
+    3. 尺度效应: Slope 和 TPI 的计算强依赖于 DEM 的分辨率（当前代码基于 0.05°）。
+       在 0.05° 尺度下，Slope 反映的是区域倾斜度而非微观坡度。
+    4. 性能: 代码使用了全图矩阵运算优化 Slope/TPI 计算，效率远高于逐站循环。
+
+依赖库:
+    os, numpy, pandas, netCDF4, scipy, cartopy, math
+
+===============================================================================
+"""
+
+
 import os
 import numpy as np
 import pandas as pd
@@ -190,7 +247,7 @@ def calculate_slope_tpi_from_dem(station_lons, station_lats, dem_path):
         # --- 计算 TPI ---
         # TPI = 海拔 - 邻域平均海拔
         # 窗口大小 size=3 (3x3 grid)，对应 0.05*3 = 0.15度 ≈ 15km 尺度
-        mean_elev = uniform_filter(dem_elev, size=3, mode='reflect')
+        mean_elev = uniform_filter(dem_elev, size=2, mode='reflect')
         tpi_grid = dem_elev - mean_elev
         
         # --- 提取站点值 ---
