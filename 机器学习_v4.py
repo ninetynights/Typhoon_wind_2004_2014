@@ -50,51 +50,6 @@ FEATURE_MAP_CN = {
 }
 
 # ================= 1. 数据准备 =================
-'''
-def load_and_prep_data(filepath):
-    print(f">>> 正在读取数据集: {filepath}")
-    if not os.path.exists(filepath):
-        print(f"[错误] 文件不存在: {filepath}")
-        return None, None, None
-        
-    df = pd.read_csv(filepath)
-    
-    # [修改点3] 特征定义 (加入新变量)
-    feature_cols = [
-        # 1. 台风属性
-        'Ty_Pressure', 'Ty_Center_Wind',
-        'Ty_Move_Speed', 'Ty_Move_Dir', 
-        
-        # 2. 站点静态属性
-        'Sta_Height', 'Dist_to_Coast', 'Terrain_10km', 
-        'Sta_Slope', 'Sta_TPI',
-        
-        # 3. 相对位置属性
-        'Dist_Station_Ty', 'Azimuth_Station_Ty',
-        
-        # 4. 气压梯度属性 (新增)
-        'Pressure_Gradient_Obs', 'Pressure_Gradient_SLP'
-    ]
-    target_col = 'Obs_Wind_Speed'
-    
-    print(f"    数据集样本数: {len(df)}")
-    
-    # 检查特征是否存在
-    missing_cols = [c for c in feature_cols if c not in df.columns]
-    if missing_cols:
-        print(f"[警告] 数据集中缺少以下列: {missing_cols}")
-        print("请检查是否使用了正确版本的 CSV 文件 (应包含 v3_Pressure)")
-        return None, None, None
-    
-    if df[feature_cols].isnull().any().any():
-        print(f"    检测到缺失值，正在剔除...")
-        df = df.dropna(subset=feature_cols + [target_col])
-        print(f"    剔除后样本数: {len(df)}")
-    
-    return df, feature_cols, target_col
-'''
-# ================= 1. 数据准备 (优化版：保留气压缺失样本) =================
-
 def load_and_prep_data(filepath):
     print(f">>> 正在读取数据集: {filepath}")
     if not os.path.exists(filepath):
@@ -109,7 +64,7 @@ def load_and_prep_data(filepath):
     # ---------------------------------------------------------
     feature_cols = [
         # --- 台风属性 ---
-        'Ty_Pressure', 'Ty_Center_Wind', 'Ty_Lat', 'Ty_Lon', 
+        'Ty_Pressure', 'Ty_Center_Wind',
         'Ty_Move_Speed', 'Ty_Move_Dir', 
         
         # --- 站点静态属性 ---
@@ -170,7 +125,7 @@ def train_model(df, features, target):
     
     print(f"    训练集: {len(X_train)} | 测试集: {len(X_test)}")
     
-    print("\n>>> 开始训练 XGBoost (利用 M2 芯片)...")
+    print("\n>>> 开始训练 XGBoost ")
     model = xgb.XGBRegressor(
         n_estimators=1000,
         learning_rate=0.05,
@@ -381,7 +336,7 @@ def main():
         print("\n[警告] 未找到 'Cluster_10_Plus' 列，跳过 10级+ 分析。")
 
     print(f"\n[完成] 成果已保存至: {OUTPUT_DIR}")
-    print("包含特征: 基础气象 + 静态地理(含TPI/Slope) + 动态路径(含移速/向) + 气压梯度。")
+    print("包含特征: 基础气象 + 静态地理(含TPI/Slope) + 动态路径(含移速/向) + 气压梯度")
 
 if __name__ == "__main__":
     main()
