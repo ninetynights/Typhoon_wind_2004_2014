@@ -45,6 +45,8 @@ LEVELS_RANGE = {
 }
 
 LEVELS_EXCEED = {
+    "8级及以上": 17.2,   # 新增
+    "9级及以上": 20.8,
     "10级及以上": 24.5,
     "11级及以上": 28.5,
     "12级及以上": 32.7
@@ -172,7 +174,7 @@ def main():
     n_time, n_sta = wind_speeds.shape
     fallback_time_strs = get_fallback_time_strings(nc, n_time)
 
-    out_dir = BASE_OUTPUT_DIR / "输出_台风过程分时段统计"
+    out_dir = BASE_OUTPUT_DIR / "输出_台风过程分时段统计（全）"
     csv_dir = out_dir / "csv"
     ensure_dir(csv_dir)
 
